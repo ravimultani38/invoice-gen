@@ -2,17 +2,21 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 
+// Dynamically import the ActionButtons to ensure it's client-side only
 const ActionButtons = dynamic(() => import('./ActionButtons'), {
   ssr: false,
 });
 
+// Define the structure for a single line item
 export interface Item {
   description: string;
   quantity: number;
   price: number;
 }
 
+// Define the structure for the entire invoice's data
 export interface InvoiceData {
   invoiceTitle: string;
   companyName: string;
@@ -23,10 +27,11 @@ export interface InvoiceData {
   paymentDetails: string;
   signatureDate: string;
   deposit: number;
-  logoBase64?: string;
+  logoBase64?: string; // Optional Base64 string for the logo
 }
 
 const InvoiceForm = () => {
+  // State to hold all the invoice data, pre-filled with defaults
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({
     invoiceTitle: 'Invoice #101',
     companyName: 'ROYAL TURBAN NYC',
@@ -42,57 +47,53 @@ const InvoiceForm = () => {
     ],
     notes: `Terms & Conditions:\n- The client will provide turban material on the day of the event.\n- The event planner is responsible for the timing of turban tying.\n- Only TWO tiers are available. Additional tiers will incur extra charges.\n- All deposits are non-refundable.`,
     paymentDetails: 'Payment Methods: Cash or Zelle (929-247-6814).',
-    signatureDate: '5/15/2025',
+    signatureDate: 'August 31, 2025',
     deposit: 270
   });
 
   const [logoPreviewError, setLogoPreviewError] = useState(false);
 
+  // Memoized calculations for subtotal and total due
   const subtotal = invoiceData.items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
   const totalDue = subtotal - invoiceData.deposit;
 
+  // Handlers for form interactions
   const handleItemChange = (index: number, field: keyof Item, value: string) => {
     const newItems = [...invoiceData.items];
     const item = newItems[index];
-
     if (field === 'description') {
-        item[field] = value;
-    } else {
-        item[field] = Number(value) || 0;
+      item.description = value;
+    } else if (field === 'quantity') {
+      item.quantity = Number(value) || 0;
+    } else if (field === 'price') {
+      item.price = Number(value) || 0;
     }
-    
     setInvoiceData({ ...invoiceData, items: newItems });
   };
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert('Please choose a file smaller than 2MB');
-        return;
-      }
-      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/webp'];
-      if (!validTypes.includes(file.type)) {
-        alert('Please choose a PNG, JPG, SVG, or WebP image file');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setInvoiceData({ ...invoiceData, logoBase64: e.target?.result as string });
-        setLogoPreviewError(false);
-      };
-      reader.onerror = () => alert('Error reading file. Please try again.');
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File is too large! Please choose a file smaller than 2MB.');
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setInvoiceData({ ...invoiceData, logoBase64: e.target?.result as string });
+      setLogoPreviewError(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const removeLogo = () => {
     setInvoiceData({ ...invoiceData, logoBase64: undefined });
-    setLogoPreviewError(false);
     const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
   };
-  
+
   const addItem = () => {
     setInvoiceData({
       ...invoiceData,
@@ -101,8 +102,10 @@ const InvoiceForm = () => {
   };
   
   const removeItem = (index: number) => {
-    const newItems = invoiceData.items.filter((_, i) => i !== index);
-    setInvoiceData({ ...invoiceData, items: newItems });
+    setInvoiceData({
+      ...invoiceData,
+      items: invoiceData.items.filter((_, i) => i !== index),
+    });
   };
   
   return (
@@ -112,7 +115,6 @@ const InvoiceForm = () => {
             <div>
                 <h2 className="text-2xl font-bold text-gray-900">INVOICE GENERATOR</h2>
             </div>
-            {/* --- INVOICE NUMBER INPUT --- */}
             <div className="text-right">
                 <h3 className="font-bold mb-2 text-gray-800">Invoice #</h3>
                 <input 
@@ -120,17 +122,17 @@ const InvoiceForm = () => {
                   placeholder="e.g., #101"
                   value={invoiceData.invoiceTitle}
                   onChange={(e) => setInvoiceData({ ...invoiceData, invoiceTitle: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                  className="w-full p-3 border border-gray-300 rounded-md"
                 />
             </div>
         </div>
         
         {/* Logo Upload Section */}
-        <div className="mb-10 p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+        <div className="mb-10 p-6 border-2 border-dashed rounded-lg bg-gray-50">
           <h3 className="font-bold mb-4 text-lg">Company Logo</h3>
           {invoiceData.logoBase64 && !logoPreviewError ? (
             <div className="flex items-start gap-4">
-              <img src={invoiceData.logoBase64} alt="Logo preview" className="w-24 h-24 object-contain border rounded-lg p-2 bg-white" onError={() => setLogoPreviewError(true)} />
+              <Image src={invoiceData.logoBase64} alt="Logo preview" width={96} height={96} className="object-contain border rounded-lg p-2 bg-white" onError={() => setLogoPreviewError(true)} />
               <div>
                 <p className="text-green-600 font-medium">✓ Logo uploaded!</p>
                 <div className="flex gap-2 mt-2">
@@ -142,13 +144,13 @@ const InvoiceForm = () => {
               </div>
             </div>
           ) : (
-            <div>
+             <div>
               <label className="cursor-pointer inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700">
                 <input id="logo-upload" type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                 <span>📁 Choose Logo File</span>
               </label>
-              <p className="mt-2 text-sm text-gray-500">Max 2MB. PNG, JPG, SVG, WebP.</p>
-              {logoPreviewError && <p className="mt-2 text-red-600">Error loading image. Please try another file.</p>}
+              <p className="mt-2 text-sm text-gray-500">Max 2MB. PNG, JPG, SVG, WebP supported.</p>
+              {logoPreviewError && <p className="mt-2 text-red-600">Error loading image preview.</p>}
             </div>
           )}
         </div>

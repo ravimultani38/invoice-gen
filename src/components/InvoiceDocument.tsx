@@ -1,31 +1,20 @@
 import React from 'react';
-// 1. Import the 'Image' component
 import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
-import { InvoiceData } from './InvoiceForm'; // Assumes types are in InvoiceForm.tsx
+import { InvoiceData } from './InvoiceForm';
 
+// Props for the document component
 interface InvoiceDocumentProps {
   data: InvoiceData;
 }
 
+// Styles for the PDF document
 const styles = StyleSheet.create({
-  // ... (all other styles are the same)
   page: { padding: 40, fontFamily: 'Helvetica', fontSize: 11, color: '#333' },
-  header: {
-    marginBottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center', // Align items vertically
-  },
-  companyDetails: {
-    textAlign: 'right', // Align text to the right
-  },
+  header: { marginBottom: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  companyDetails: { textAlign: 'right' },
   companyName: { fontSize: 28, fontWeight: 'bold', color: '#1a1a1a' },
   invoiceTitle: { fontSize: 16, color: '#888', marginTop: 4 },
-  logo: { // New style for the logo
-    width: 80,
-    height: 80,
-    objectFit: 'contain',
-  },
+  logo: { width: 80, height: 80, objectFit: 'contain' },
   section: { marginBottom: 20, flexDirection: 'row', justifyContent: 'space-between' },
   sectionColumn: { flexGrow: 1, width: '45%' },
   subHeader: { fontSize: 12, fontWeight: 'bold', backgroundColor: '#f0f0f0', padding: 6, marginBottom: 8, borderRadius: 3, },
@@ -57,7 +46,6 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ data }) => {
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          {/* 2. Conditionally render the logo if it exists */}
           {data.logoBase64 && (
             <Image style={styles.logo} src={data.logoBase64} />
           )}
@@ -67,7 +55,6 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ data }) => {
           </View>
         </View>
         
-        {/* ... The rest of the document remains the same ... */}
         <View style={styles.section}>
           <View style={styles.sectionColumn}>
             <Text style={styles.subHeader}>Bill To</Text>
