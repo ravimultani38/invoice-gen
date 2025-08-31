@@ -55,13 +55,7 @@ const InvoiceForm = () => {
   const handleItemChange = (index: number, field: keyof Item, value: string) => {
     const newItems = [...invoiceData.items];
     const item = newItems[index];
-    if (field === 'description') {
-      item.description = value;
-    } else if (field === 'quantity') {
-      item.quantity = Number(value) || 0;
-    } else if (field === 'price') {
-      item.price = Number(value) || 0;
-    }
+    item[field] = field === 'description' ? value : (Number(value) || 0);
     setInvoiceData({ ...invoiceData, items: newItems });
   };
 
@@ -116,7 +110,7 @@ const InvoiceForm = () => {
                   placeholder="e.g., #101"
                   value={invoiceData.invoiceTitle}
                   onChange={(e) => setInvoiceData({ ...invoiceData, invoiceTitle: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-md"
+                  className="w-full p-3 border border-gray-300 rounded-md text-gray-900 placeholder:text-gray-400"
                 />
             </div>
         </div>
@@ -151,14 +145,14 @@ const InvoiceForm = () => {
         <div className="grid md:grid-cols-2 gap-10 mb-10">
           <div>
             <h3 className="font-bold mb-2 text-gray-800">Bill To</h3>
-            <input type="text" placeholder="Client Name" value={invoiceData.billTo.name} onChange={(e) => setInvoiceData({ ...invoiceData, billTo: { ...invoiceData.billTo, name: e.target.value }})} className="w-full p-3 border rounded-md mb-2" />
-            <input type="text" placeholder="Client Phone" value={invoiceData.billTo.phone} onChange={(e) => setInvoiceData({ ...invoiceData, billTo: { ...invoiceData.billTo, phone: e.target.value }})} className="w-full p-3 border rounded-md" />
+            <input type="text" placeholder="Client Name" value={invoiceData.billTo.name} onChange={(e) => setInvoiceData({ ...invoiceData, billTo: { ...invoiceData.billTo, name: e.target.value }})} className="w-full p-3 border rounded-md mb-2 text-gray-900 placeholder:text-gray-400" />
+            <input type="text" placeholder="Client Phone" value={invoiceData.billTo.phone} onChange={(e) => setInvoiceData({ ...invoiceData, billTo: { ...invoiceData.billTo, phone: e.target.value }})} className="w-full p-3 border rounded-md text-gray-900 placeholder:text-gray-400" />
           </div>
           <div>
             <h3 className="font-bold mb-2 text-gray-800">Event Details</h3>
-            <input type="text" placeholder="Event Date" value={invoiceData.eventDetails.date} onChange={(e) => setInvoiceData({ ...invoiceData, eventDetails: { ...invoiceData.eventDetails, date: e.target.value }})} className="w-full p-3 border rounded-md mb-2" />
-            <input type="text" placeholder="Event Time" value={invoiceData.eventDetails.time} onChange={(e) => setInvoiceData({ ...invoiceData, eventDetails: { ...invoiceData.eventDetails, time: e.target.value }})} className="w-full p-3 border rounded-md mb-2" />
-            <input type="text" placeholder="Event Location" value={invoiceData.eventDetails.location} onChange={(e) => setInvoiceData({ ...invoiceData, eventDetails: { ...invoiceData.eventDetails, location: e.target.value }})} className="w-full p-3 border rounded-md" />
+            <input type="text" placeholder="Event Date" value={invoiceData.eventDetails.date} onChange={(e) => setInvoiceData({ ...invoiceData, eventDetails: { ...invoiceData.eventDetails, date: e.target.value }})} className="w-full p-3 border rounded-md mb-2 text-gray-900 placeholder:text-gray-400" />
+            <input type="text" placeholder="Event Time" value={invoiceData.eventDetails.time} onChange={(e) => setInvoiceData({ ...invoiceData, eventDetails: { ...invoiceData.eventDetails, time: e.target.value }})} className="w-full p-3 border rounded-md mb-2 text-gray-900 placeholder:text-gray-400" />
+            <input type="text" placeholder="Event Location" value={invoiceData.eventDetails.location} onChange={(e) => setInvoiceData({ ...invoiceData, eventDetails: { ...invoiceData.eventDetails, location: e.target.value }})} className="w-full p-3 border rounded-md text-gray-900 placeholder:text-gray-400" />
           </div>
         </div>
 
@@ -172,10 +166,10 @@ const InvoiceForm = () => {
           </div>
           {invoiceData.items.map((item, index) => (
             <div key={index} className="grid grid-cols-12 gap-2 items-center mb-2">
-              <input type="text" value={item.description} onChange={(e) => handleItemChange(index, 'description', e.target.value)} className="col-span-5 p-2 border rounded" placeholder="Description" />
-              <input type="number" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className="col-span-2 p-2 border rounded text-center" placeholder="Qty" min="0" />
-              <input type="number" value={item.price} onChange={(e) => handleItemChange(index, 'price', e.target.value)} className="col-span-2 p-2 border rounded text-right" placeholder="Price" min="0" step="0.01" />
-              <div className="col-span-2 p-2 text-right font-semibold">${(item.quantity * item.price).toFixed(2)}</div>
+              <input type="text" value={item.description} onChange={(e) => handleItemChange(index, 'description', e.target.value)} className="col-span-5 p-2 border rounded text-gray-900 placeholder:text-gray-400" placeholder="Description" />
+              <input type="number" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className="col-span-2 p-2 border rounded text-center text-gray-900 placeholder:text-gray-400" placeholder="Qty" min="0" />
+              <input type="number" value={item.price} onChange={(e) => handleItemChange(index, 'price', e.target.value)} className="col-span-2 p-2 border rounded text-right text-gray-900 placeholder:text-gray-400" placeholder="Price" min="0" step="0.01" />
+              <div className="col-span-2 p-2 text-right font-semibold text-gray-900">${(item.quantity * item.price).toFixed(2)}</div>
               <button onClick={() => removeItem(index)} className="col-span-1 text-red-600 hover:text-red-800 text-2xl" title="Remove item">×</button>
             </div>
           ))}
@@ -186,8 +180,8 @@ const InvoiceForm = () => {
             <div className="w-full md:w-96 bg-gray-50 rounded-lg p-6 border">
               <h3 className="font-bold mb-4 text-lg text-gray-800">Invoice Summary</h3>
               <div className="space-y-2">
-                <div className="flex justify-between"><span className="text-gray-600">Subtotal:</span><span className="font-medium">${subtotal.toFixed(2)}</span></div>
-                <div className="flex justify-between items-center"><span className="text-gray-600">Deposit:</span><input type="number" value={invoiceData.deposit} onChange={(e) => setInvoiceData({ ...invoiceData, deposit: Number(e.target.value) || 0 })} className="w-24 p-2 text-right border rounded text-sm" placeholder="0" min="0" step="0.01" /></div>
+                <div className="flex justify-between"><span className="text-gray-600">Subtotal:</span><span className="font-medium text-gray-900">${subtotal.toFixed(2)}</span></div>
+                <div className="flex justify-between items-center"><span className="text-gray-600">Deposit:</span><input type="number" value={invoiceData.deposit} onChange={(e) => setInvoiceData({ ...invoiceData, deposit: Number(e.target.value) || 0 })} className="w-24 p-2 text-right border rounded text-sm text-gray-900 placeholder:text-gray-400" placeholder="0" min="0" step="0.01" /></div>
                 <div className="border-t pt-2 mt-2"><div className="flex justify-between"><span className="font-bold text-lg text-gray-800">Total Due:</span><span className="font-bold text-xl text-green-600">${totalDue.toFixed(2)}</span></div></div>
               </div>
             </div>
@@ -195,7 +189,7 @@ const InvoiceForm = () => {
         
         <div>
           <h3 className="font-bold mb-2 text-gray-800">Terms & Notes</h3>
-          <textarea value={invoiceData.notes} onChange={(e) => setInvoiceData({ ...invoiceData, notes: e.target.value })} className="w-full h-32 p-3 border rounded-md" placeholder="Add terms..." />
+          <textarea value={invoiceData.notes} onChange={(e) => setInvoiceData({ ...invoiceData, notes: e.target.value })} className="w-full h-32 p-3 border rounded-md text-gray-900 placeholder:text-gray-400" placeholder="Add terms..." />
         </div>
       </div>
       <ActionButtons invoiceData={invoiceData} />

@@ -114,7 +114,7 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ data }) => {
             <Text style={{ marginTop: 20 }}>Date: ________________</Text>
           </View>
           <View style={styles.signatureBox}>
-            <Text>Singh Turban Tying NJ Signature</Text>
+            <Text>RoYal Turban Tying NYC Signature</Text>
             <Text style={{ marginTop: 20 }}>Date: {data.signatureDate}</Text>
           </View>
         </View>
