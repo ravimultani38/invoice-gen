@@ -35,7 +35,9 @@ const styles = StyleSheet.create({
   notes: { fontSize: 9, color: '#555', lineHeight: 1.5, marginTop: 20, borderTopColor: '#e0e0e0', borderTopWidth: 1, paddingTop: 10, },
   footer: { position: 'absolute', bottom: 30, left: 40, right: 40, textAlign: 'center', fontSize: 10, color: '#888', },
   signatureSection: { marginTop: 40, flexDirection: 'row', justifyContent: 'space-between', },
-  signatureBox: { width: '45%', borderTopColor: '#333', borderTopWidth: 1, paddingTop: 8, },
+  signatureBox: { width: '45%', paddingTop: 8 },
+  signatureLine: { borderTopColor: '#333', borderTopWidth: 1, marginTop: 40 },
+  signatureImage: { width: 120, height: 40, objectFit: 'contain' },
 });
 
 const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ data }) => {
@@ -111,11 +113,17 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ data }) => {
         <View style={styles.signatureSection}>
           <View style={styles.signatureBox}>
             <Text>Client&apos;s Signature</Text>
-            <Text style={{ marginTop: 20 }}>Date: ________________</Text>
+            <View style={styles.signatureLine} />
+            <Text style={{ marginTop: 8 }}>Date: ________________</Text>
           </View>
           <View style={styles.signatureBox}>
-            <Text>RoYal Turban Tying NYC Signature</Text>
-            <Text style={{ marginTop: 20 }}>Date: {data.signatureDate}</Text>
+            <Text>Singh Turban Tying NJ Signature</Text>
+            {data.signatureBase64 ? (
+              <Image style={styles.signatureImage} src={data.signatureBase64} />
+            ) : (
+              <View style={styles.signatureLine} />
+            )}
+            <Text style={{ marginTop: 8 }}>Date: {data.signatureDate}</Text>
           </View>
         </View>
         

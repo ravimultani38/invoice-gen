@@ -4,16 +4,19 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 
+// Dynamically import the ActionButtons to ensure it's client-side only
 const ActionButtons = dynamic(() => import('./ActionButtons'), {
   ssr: false,
 });
 
+// Define the structure for a single line item
 export interface Item {
   description: string;
   quantity: number;
   price: number;
 }
 
+// Define the structure for the entire invoice's data
 export interface InvoiceData {
   invoiceTitle: string;
   companyName: string;
@@ -25,9 +28,11 @@ export interface InvoiceData {
   signatureDate: string;
   deposit: number;
   logoBase64?: string;
+  signatureBase64?: string; // Signature field
 }
 
 const InvoiceForm = () => {
+  // State to hold all the invoice data
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({
     invoiceTitle: 'Invoice #101',
     companyName: 'ROYAL TURBAN NYC',
@@ -44,14 +49,16 @@ const InvoiceForm = () => {
     notes: `Terms & Conditions:\n- The client will provide turban material on the day of the event.\n- The event planner is responsible for the timing of turban tying.\n- Only TWO tiers are available. Additional tiers will incur extra charges.\n- All deposits are non-refundable.`,
     paymentDetails: 'Payment Methods: Cash or Zelle (929-247-6814).',
     signatureDate: 'August 31, 2025',
-    deposit: 270
+    deposit: 270,
   });
 
   const [logoPreviewError, setLogoPreviewError] = useState(false);
 
+  // Calculate totals
   const subtotal = invoiceData.items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
   const totalDue = subtotal - invoiceData.deposit;
 
+  // Handlers for form interactions
   const handleItemChange = (index: number, field: keyof Item, value: string) => {
     const newItems = [...invoiceData.items];
     const item = newItems[index];
@@ -65,26 +72,27 @@ const InvoiceForm = () => {
     setInvoiceData({ ...invoiceData, items: newItems });
   };
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>, field: 'logoBase64' | 'signatureBase64') => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
       alert('File is too large! Please choose a file smaller than 2MB.');
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      setInvoiceData({ ...invoiceData, logoBase64: e.target?.result as string });
-      setLogoPreviewError(false);
+      setInvoiceData({ ...invoiceData, [field]: e.target?.result as string });
+      if (field === 'logoBase64') setLogoPreviewError(false);
     };
     reader.readAsDataURL(file);
   };
 
-  const removeLogo = () => {
-    setInvoiceData({ ...invoiceData, logoBase64: undefined });
-    const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
+  const removeImage = (field: 'logoBase64' | 'signatureBase64') => {
+    setInvoiceData({ ...invoiceData, [field]: undefined });
+    const fileInputId = field === 'logoBase64' ? 'logo-upload' : 'signature-upload';
+    const fileInput = document.getElementById(fileInputId) as HTMLInputElement;
     if (fileInput) fileInput.value = '';
   };
 
@@ -121,6 +129,7 @@ const InvoiceForm = () => {
             </div>
         </div>
         
+        {/* Logo Upload Section */}
         <div className="mb-10 p-6 border-2 border-dashed rounded-lg bg-gray-50">
           <h3 className="font-bold mb-4 text-lg text-gray-800">Company Logo</h3>
           {invoiceData.logoBase64 && !logoPreviewError ? (
@@ -130,16 +139,16 @@ const InvoiceForm = () => {
                 <p className="text-green-600 font-medium">✓ Logo uploaded!</p>
                 <div className="flex gap-2 mt-2">
                   <label className="cursor-pointer px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-md hover:bg-blue-200">
-                    <input id="logo-upload" type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" /> Replace
+                    <input id="logo-upload" type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'logoBase64')} className="hidden" /> Replace
                   </label>
-                  <button onClick={removeLogo} className="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-md hover:bg-red-200">Remove</button>
+                  <button onClick={() => removeImage('logoBase64')} className="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-md hover:bg-red-200">Remove</button>
                 </div>
               </div>
             </div>
           ) : (
              <div>
               <label className="cursor-pointer inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700">
-                <input id="logo-upload" type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                <input id="logo-upload" type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'logoBase64')} className="hidden" />
                 <span>📁 Choose Logo File</span>
               </label>
               <p className="mt-2 text-sm text-gray-500">Max 2MB. PNG, JPG, SVG, WebP supported.</p>
@@ -148,6 +157,7 @@ const InvoiceForm = () => {
           )}
         </div>
 
+        {/* Bill To & Event Details */}
         <div className="grid md:grid-cols-2 gap-10 mb-10">
           <div>
             <h3 className="font-bold mb-2 text-gray-800">Bill To</h3>
@@ -162,6 +172,7 @@ const InvoiceForm = () => {
           </div>
         </div>
 
+        {/* Line Items */}
         <div className="mb-10">
           <h3 className="font-bold mb-2 text-gray-800">Line Items</h3>
           <div className="grid grid-cols-12 gap-2 mb-2">
@@ -182,6 +193,7 @@ const InvoiceForm = () => {
           <button onClick={addItem} className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">+ Add Item</button>
         </div>
 
+        {/* Summary */}
         <div className="flex justify-end mb-10">
             <div className="w-full md:w-96 bg-gray-50 rounded-lg p-6 border">
               <h3 className="font-bold mb-4 text-lg text-gray-800">Invoice Summary</h3>
@@ -193,10 +205,39 @@ const InvoiceForm = () => {
             </div>
         </div>
         
+        {/* Notes */}
         <div>
           <h3 className="font-bold mb-2 text-gray-800">Terms & Notes</h3>
           <textarea value={invoiceData.notes} onChange={(e) => setInvoiceData({ ...invoiceData, notes: e.target.value })} className="w-full h-32 p-3 border rounded-md text-gray-900 placeholder:text-gray-400" placeholder="Add terms..." />
         </div>
+        
+        {/* Signature Upload Section */}
+        <div className="mt-10 p-6 border-2 border-dashed rounded-lg bg-gray-50">
+          <h3 className="font-bold mb-4 text-lg text-gray-800">Your Signature</h3>
+          {invoiceData.signatureBase64 ? (
+            <div className="flex items-start gap-4">
+              <Image src={invoiceData.signatureBase64} alt="Signature preview" width={120} height={60} className="object-contain border rounded-lg p-2 bg-white" />
+              <div>
+                <p className="text-green-600 font-medium">✓ Signature uploaded!</p>
+                <div className="flex gap-2 mt-2">
+                  <label className="cursor-pointer px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-md hover:bg-blue-200">
+                    <input id="signature-upload" type="file" accept="image/png, image/jpeg" onChange={(e) => handleImageUpload(e, 'signatureBase64')} className="hidden" /> Replace
+                  </label>
+                  <button onClick={() => removeImage('signatureBase64')} className="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-md hover:bg-red-200">Remove</button>
+                </div>
+              </div>
+            </div>
+          ) : (
+             <div>
+              <label className="cursor-pointer inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700">
+                <input id="signature-upload" type="file" accept="image/png, image/jpeg" onChange={(e) => handleImageUpload(e, 'signatureBase64')} className="hidden" />
+                <span>✍️ Choose Signature File</span>
+              </label>
+              <p className="mt-2 text-sm text-gray-500">Recommended: PNG with transparent background.</p>
+            </div>
+          )}
+        </div>
+
       </div>
       <ActionButtons invoiceData={invoiceData} />
     </div>
