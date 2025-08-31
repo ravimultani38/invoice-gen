@@ -1,17 +1,31 @@
 import React from 'react';
-import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
-import { InvoiceData } from './InvoiceForm'; // Import the updated type
+// 1. Import the 'Image' component
+import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
+import { InvoiceData } from './InvoiceForm'; // Assumes types are in InvoiceForm.tsx
 
-// Define the type for the component's props
 interface InvoiceDocumentProps {
   data: InvoiceData;
 }
 
 const styles = StyleSheet.create({
+  // ... (all other styles are the same)
   page: { padding: 40, fontFamily: 'Helvetica', fontSize: 11, color: '#333' },
-  header: { textAlign: 'center', marginBottom: 20 },
+  header: {
+    marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center', // Align items vertically
+  },
+  companyDetails: {
+    textAlign: 'right', // Align text to the right
+  },
   companyName: { fontSize: 28, fontWeight: 'bold', color: '#1a1a1a' },
   invoiceTitle: { fontSize: 16, color: '#888', marginTop: 4 },
+  logo: { // New style for the logo
+    width: 80,
+    height: 80,
+    objectFit: 'contain',
+  },
   section: { marginBottom: 20, flexDirection: 'row', justifyContent: 'space-between' },
   sectionColumn: { flexGrow: 1, width: '45%' },
   subHeader: { fontSize: 12, fontWeight: 'bold', backgroundColor: '#f0f0f0', padding: 6, marginBottom: 8, borderRadius: 3, },
@@ -37,17 +51,23 @@ const styles = StyleSheet.create({
 
 const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ data }) => {
   const subtotal = data.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
-  const deposit = data.deposit || 0; // Use deposit from data instead of hardcoded value
-  const totalDue = subtotal - deposit;
+  const totalDue = subtotal - data.deposit;
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.companyName}>{data.companyName}</Text>
-          <Text style={styles.invoiceTitle}>{data.invoiceTitle}</Text>
+          {/* 2. Conditionally render the logo if it exists */}
+          {data.logoBase64 && (
+            <Image style={styles.logo} src={data.logoBase64} />
+          )}
+          <View style={styles.companyDetails}>
+            <Text style={styles.companyName}>{data.companyName}</Text>
+            <Text style={styles.invoiceTitle}>{data.invoiceTitle}</Text>
+          </View>
         </View>
         
+        {/* ... The rest of the document remains the same ... */}
         <View style={styles.section}>
           <View style={styles.sectionColumn}>
             <Text style={styles.subHeader}>Bill To</Text>
@@ -87,7 +107,7 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ data }) => {
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Deposit:</Text>
-              <Text>${deposit.toFixed(2)}</Text>
+              <Text>${data.deposit.toFixed(2)}</Text>
             </View>
             <View style={[styles.summaryRow, styles.totalDueRow]}>
               <Text style={styles.summaryLabel}>Total Due:</Text>
@@ -103,7 +123,7 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ data }) => {
 
         <View style={styles.signatureSection}>
           <View style={styles.signatureBox}>
-            <Text>Client&apos;s Signature</Text>
+            <Text>Client's Signature</Text>
             <Text style={{ marginTop: 20 }}>Date: ________________</Text>
           </View>
           <View style={styles.signatureBox}>
