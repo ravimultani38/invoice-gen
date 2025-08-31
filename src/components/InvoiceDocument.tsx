@@ -123,7 +123,7 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ data }) => {
 
         <View style={styles.signatureSection}>
           <View style={styles.signatureBox}>
-            <Text>Client's Signature</Text>
+            <Text>Client&apos;s Signature</Text>
             <Text style={{ marginTop: 20 }}>Date: ________________</Text>
           </View>
           <View style={styles.signatureBox}>
