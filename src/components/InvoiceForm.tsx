@@ -55,7 +55,13 @@ const InvoiceForm = () => {
   const handleItemChange = (index: number, field: keyof Item, value: string) => {
     const newItems = [...invoiceData.items];
     const item = newItems[index];
-    item[field] = field === 'description' ? value : (Number(value) || 0);
+    if (field === 'description') {
+      item.description = value;
+    } else if (field === 'quantity') {
+      item.quantity = Number(value) || 0;
+    } else if (field === 'price') {
+      item.price = Number(value) || 0;
+    }
     setInvoiceData({ ...invoiceData, items: newItems });
   };
 
