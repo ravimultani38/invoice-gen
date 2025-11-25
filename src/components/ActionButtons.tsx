@@ -5,9 +5,10 @@ import { InvoiceData } from '@/app/config/companies';
 
 interface ActionButtonsProps {
   invoiceData: InvoiceData;
+  onAutoSave?: () => void; // Added optional callback
 }
 
-const ActionButtons: React.FC<ActionButtonsProps> = ({ invoiceData }) => {
+const ActionButtons: React.FC<ActionButtonsProps> = ({ invoiceData, onAutoSave }) => {
   const [isClient, setIsClient] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -17,6 +18,10 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ invoiceData }) => {
 
   const handleGenerate = async (action: 'download' | 'print') => {
     if (isGenerating) return;
+
+    // Trigger the auto-save history function if provided
+    if (onAutoSave) onAutoSave();
+
     setIsGenerating(true);
 
     try {

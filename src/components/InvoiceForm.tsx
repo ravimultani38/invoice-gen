@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 // Ensure this path matches where you created the file. 
-// If it's in src/config/companies.ts, use '@/config/companies'
 import { InvoiceData, Item, CompanyType, COMPANY_DEFAULTS } from '@/app/config/companies';
 
 // Dynamically import the ActionButtons to ensure it's client-side only
@@ -22,6 +21,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ selectedCompany, onBack }) =>
   const [invoiceData, setInvoiceData] = useState<InvoiceData>(COMPANY_DEFAULTS[selectedCompany]);
   const [logoPreviewError, setLogoPreviewError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
 
   // 1. Load data from LocalStorage on mount
   useEffect(() => {
@@ -29,7 +29,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ selectedCompany, onBack }) =>
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
-        // Merge with defaults to ensure new fields (like email) exist if loading old data
+        // Merge with defaults to ensure new fields exist if loading old data
         setInvoiceData({ ...COMPANY_DEFAULTS[selectedCompany], ...parsed });
       } catch (e) {
         console.error("Failed to load saved data", e);
@@ -44,15 +44,43 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ selectedCompany, onBack }) =>
   // 2. Save data to LocalStorage whenever it changes (after initial load)
   useEffect(() => {
     if (isLoaded) {
+      setSaveStatus('saving'); // Show "Saving..." immediately
       localStorage.setItem(`invoice_data_${selectedCompany}`, JSON.stringify(invoiceData));
+      
+      // Add a small delay to show "Saved" so the user sees the change
+      const timer = setTimeout(() => {
+        setSaveStatus('saved');
+      }, 800);
+      
+      return () => clearTimeout(timer);
     }
   }, [invoiceData, selectedCompany, isLoaded]);
+
+  // 3. Save to History (called when generating PDF)
+  const saveToHistory = () => {
+    const historyKey = `invoice_history_${selectedCompany}`;
+    try {
+      const currentHistory = JSON.parse(localStorage.getItem(historyKey) || '[]');
+      const newEntry = {
+        ...invoiceData,
+        savedAt: new Date().toISOString(),
+        historyId: Date.now(), // Unique ID for this version
+      };
+      // Add new entry to the TOP of the list, keep max 50 items example
+      const updatedHistory = [newEntry, ...currentHistory].slice(0, 50);
+      localStorage.setItem(historyKey, JSON.stringify(updatedHistory));
+      console.log("Auto-saved to history");
+    } catch (e) {
+      console.error("Failed to save history", e);
+    }
+  };
 
   const handleReset = () => {
     if (window.confirm("Are you sure you want to reset this form? All current changes will be lost.")) {
       const defaults = COMPANY_DEFAULTS[selectedCompany];
       setInvoiceData(defaults);
-      localStorage.setItem(`invoice_data_${selectedCompany}`, JSON.stringify(defaults));
+      // We don't need to manually save to localStorage here because 
+      // setInvoiceData will trigger the useEffect above
     }
   };
 
@@ -127,12 +155,25 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ selectedCompany, onBack }) =>
             >
                 ← Switch Company
             </button>
-            <button 
-                onClick={handleReset}
-                className="text-sm text-red-400 hover:text-red-600 underline transition-colors"
-            >
-                Reset Form
-            </button>
+
+            <div className="flex items-center gap-3 text-sm">
+              {saveStatus === 'saving' ? (
+                <span className="text-gray-400 animate-pulse flex items-center gap-1">
+                  ☁️ Saving...
+                </span>
+              ) : (
+                <span className="text-green-600 flex items-center gap-1 font-medium">
+                  ✓ Saved
+                </span>
+              )}
+              <span className="text-gray-300">|</span>
+              <button 
+                  onClick={handleReset}
+                  className="text-red-400 hover:text-red-600 underline transition-colors"
+              >
+                  Reset Form
+              </button>
+            </div>
         </div>
 
       <div className="p-4 sm:p-10">
@@ -148,7 +189,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ selectedCompany, onBack }) =>
                   placeholder="e.g., #101"
                   value={invoiceData.invoiceTitle}
                   onChange={(e) => setInvoiceData({ ...invoiceData, invoiceTitle: e.target.value })}
-                  // FIX: Apply the inputStyle here
                   className="w-full p-3 border border-gray-300 rounded-md text-gray-900 placeholder:text-gray-400 text-right focus:ring-2 outline-none transition-all"
                   style={inputStyle}
                 />
@@ -285,7 +325,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ selectedCompany, onBack }) =>
         </div>
 
       </div>
-      <ActionButtons invoiceData={invoiceData} />
+      <ActionButtons invoiceData={invoiceData} onAutoSave={saveToHistory} />
     </div>
   );
 };
