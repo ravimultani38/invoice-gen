@@ -112,7 +112,7 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ data }) => {
               <Text>${subtotal.toFixed(2)}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Deposit:</Text>
+              <Text style={styles.summaryLabel}>Paid:</Text>
               <Text>${data.deposit.toFixed(2)}</Text>
             </View>
             <View style={[styles.summaryRow, styles.totalDueRow, { backgroundColor: themeColor }]}>
