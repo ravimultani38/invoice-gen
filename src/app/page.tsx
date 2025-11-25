@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import InvoiceForm, { CompanyType } from '@/components/InvoiceForm';
+import InvoiceForm from '@/components/InvoiceForm';
+
+import { CompanyType } from '@/app/config/companies'; 
 
 export default function Home() {
   const [selectedCompany, setSelectedCompany] = useState<CompanyType | null>(null);
