@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 
@@ -28,31 +28,68 @@ export interface InvoiceData {
   signatureDate: string;
   deposit: number;
   logoBase64?: string;
-  signatureBase64?: string; // Signature field
+  signatureBase64?: string;
+  labels?: { billTo?: string; details?: string }; // Dynamic labels for PDF
 }
 
-const InvoiceForm = () => {
-  // State to hold all the invoice data
-  const [invoiceData, setInvoiceData] = useState<InvoiceData>({
+export type CompanyType = 'ROYAL_TURBAN' | 'ESCALADE_RIDE';
+
+interface InvoiceFormProps {
+  selectedCompany: CompanyType;
+  onBack: () => void;
+}
+
+const COMPANY_DEFAULTS: Record<CompanyType, InvoiceData> = {
+  ROYAL_TURBAN: {
     invoiceTitle: 'Invoice #101',
     companyName: 'ROYAL TURBAN NYC',
-    billTo: { name: 'Eshvar Kotahwala', phone: '+1 (347) 249-0738' },
+    billTo: { name: '', phone: '' },
     eventDetails: {
-      date: 'November 2, 2025',
+      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
       time: '10:30 AM to 12:30 PM',
-      location: 'Hilton Hasbrouck Heights, NJ',
+      location: '',
     },
     items: [
-      { description: 'Each Additional Turban', quantity: 45, price: 30 },
-      { description: 'Travel Charge', quantity: 1, price: 120 },
+      { description: 'Turban Tying Service', quantity: 1, price: 150 },
+      { description: 'Travel Charge', quantity: 1, price: 50 },
     ],
-    notes: `Terms & Conditions:\n- The client will provide turban material on the day of the event.\n- The event planner is responsible for the timing of turban tying.\n- Only TWO tiers are available. Additional tiers will incur extra charges.\n- All deposits are non-refundable.`,
+    notes: `Terms & Conditions:\n- The client will provide turban material on the day of the event.\n- The event planner is responsible for the timing of turban tying.\n- All deposits are non-refundable.`,
     paymentDetails: 'Payment Methods: Cash or Zelle (929-247-6814).',
-    signatureDate: 'August 31, 2025',
-    deposit: 270,
-  });
+    signatureDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    deposit: 0,
+    labels: { billTo: 'Bill To', details: 'Event Details' }
+  },
+  ESCALADE_RIDE: {
+    invoiceTitle: 'Trip Receipt #001',
+    companyName: 'Escalade Ride Inc.',
+    billTo: { name: '', phone: '' },
+    eventDetails: {
+      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      time: 'Pickup: 10:00 AM',
+      location: 'JFK Airport to Manhattan',
+    },
+    items: [
+      { description: 'Luxury Limo Service (Hours)', quantity: 3, price: 120 },
+      { description: 'Tolls & Surcharges', quantity: 1, price: 45 },
+      { description: 'Gratuity (20%)', quantity: 1, price: 72 },
+    ],
+    notes: `Terms & Conditions:\n- Overtime charges apply after the booked duration.\n- No smoking or food allowed inside the vehicle.\n- Cancellations within 24 hours are non-refundable.\n- Any damage to the vehicle will be charged to the client.`,
+    paymentDetails: 'Payment Methods: Credit Card, Cash, or Corporate Account.',
+    signatureDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    deposit: 100,
+    labels: { billTo: 'Passenger / Bill To', details: 'Trip Information' }
+  }
+};
 
+const InvoiceForm: React.FC<InvoiceFormProps> = ({ selectedCompany, onBack }) => {
+  // State to hold all the invoice data
+  const [invoiceData, setInvoiceData] = useState<InvoiceData>(COMPANY_DEFAULTS[selectedCompany]);
   const [logoPreviewError, setLogoPreviewError] = useState(false);
+
+  // Effect to reset data if company changes (optional, mostly handled by parent re-mounting)
+  useEffect(() => {
+    setInvoiceData(COMPANY_DEFAULTS[selectedCompany]);
+  }, [selectedCompany]);
 
   // Calculate totals
   const subtotal = invoiceData.items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
@@ -111,20 +148,28 @@ const InvoiceForm = () => {
   };
   
   return (
-    <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg max-w-6xl mx-auto">
+    <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg max-w-6xl mx-auto relative">
+        <button 
+            onClick={onBack} 
+            className="mb-4 text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+        >
+            ← Switch Company
+        </button>
+
       <div className="p-4 sm:p-10">
         <div className="flex justify-between items-start mb-10">
             <div>
-                <h2 className="text-2xl font-bold text-gray-900">INVOICE GENERATOR</h2>
+                <h2 className="text-2xl font-bold text-gray-900 uppercase">{invoiceData.companyName}</h2>
+                <p className="text-sm text-gray-500 mt-1">{selectedCompany === 'ESCALADE_RIDE' ? 'Luxury Transportation Service' : 'Premium Turban Tying Service'}</p>
             </div>
             <div className="text-right">
-                <h3 className="font-bold mb-2 text-gray-800">Invoice #</h3>
+                <h3 className="font-bold mb-2 text-gray-800">Receipt #</h3>
                 <input 
                   type="text" 
                   placeholder="e.g., #101"
                   value={invoiceData.invoiceTitle}
                   onChange={(e) => setInvoiceData({ ...invoiceData, invoiceTitle: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-md text-gray-900 placeholder:text-gray-400"
+                  className="w-full p-3 border border-gray-300 rounded-md text-gray-900 placeholder:text-gray-400 text-right"
                 />
             </div>
         </div>
@@ -160,15 +205,15 @@ const InvoiceForm = () => {
         {/* Bill To & Event Details */}
         <div className="grid md:grid-cols-2 gap-10 mb-10">
           <div>
-            <h3 className="font-bold mb-2 text-gray-800">Bill To</h3>
-            <input type="text" placeholder="Client Name" value={invoiceData.billTo.name} onChange={(e) => setInvoiceData({ ...invoiceData, billTo: { ...invoiceData.billTo, name: e.target.value }})} className="w-full p-3 border rounded-md mb-2 text-gray-900 placeholder:text-gray-400" />
-            <input type="text" placeholder="Client Phone" value={invoiceData.billTo.phone} onChange={(e) => setInvoiceData({ ...invoiceData, billTo: { ...invoiceData.billTo, phone: e.target.value }})} className="w-full p-3 border rounded-md text-gray-900 placeholder:text-gray-400" />
+            <h3 className="font-bold mb-2 text-gray-800">{invoiceData.labels?.billTo || 'Bill To'}</h3>
+            <input type="text" placeholder="Client/Passenger Name" value={invoiceData.billTo.name} onChange={(e) => setInvoiceData({ ...invoiceData, billTo: { ...invoiceData.billTo, name: e.target.value }})} className="w-full p-3 border rounded-md mb-2 text-gray-900 placeholder:text-gray-400" />
+            <input type="text" placeholder="Phone / Contact" value={invoiceData.billTo.phone} onChange={(e) => setInvoiceData({ ...invoiceData, billTo: { ...invoiceData.billTo, phone: e.target.value }})} className="w-full p-3 border rounded-md text-gray-900 placeholder:text-gray-400" />
           </div>
           <div>
-            <h3 className="font-bold mb-2 text-gray-800">Event Details</h3>
-            <input type="text" placeholder="Event Date" value={invoiceData.eventDetails.date} onChange={(e) => setInvoiceData({ ...invoiceData, eventDetails: { ...invoiceData.eventDetails, date: e.target.value }})} className="w-full p-3 border rounded-md mb-2 text-gray-900 placeholder:text-gray-400" />
-            <input type="text" placeholder="Event Time" value={invoiceData.eventDetails.time} onChange={(e) => setInvoiceData({ ...invoiceData, eventDetails: { ...invoiceData.eventDetails, time: e.target.value }})} className="w-full p-3 border rounded-md mb-2 text-gray-900 placeholder:text-gray-400" />
-            <input type="text" placeholder="Event Location" value={invoiceData.eventDetails.location} onChange={(e) => setInvoiceData({ ...invoiceData, eventDetails: { ...invoiceData.eventDetails, location: e.target.value }})} className="w-full p-3 border rounded-md text-gray-900 placeholder:text-gray-400" />
+            <h3 className="font-bold mb-2 text-gray-800">{invoiceData.labels?.details || 'Event Details'}</h3>
+            <input type="text" placeholder="Date" value={invoiceData.eventDetails.date} onChange={(e) => setInvoiceData({ ...invoiceData, eventDetails: { ...invoiceData.eventDetails, date: e.target.value }})} className="w-full p-3 border rounded-md mb-2 text-gray-900 placeholder:text-gray-400" />
+            <input type="text" placeholder={selectedCompany === 'ESCALADE_RIDE' ? "Pickup Time" : "Event Time"} value={invoiceData.eventDetails.time} onChange={(e) => setInvoiceData({ ...invoiceData, eventDetails: { ...invoiceData.eventDetails, time: e.target.value }})} className="w-full p-3 border rounded-md mb-2 text-gray-900 placeholder:text-gray-400" />
+            <input type="text" placeholder={selectedCompany === 'ESCALADE_RIDE' ? "Route / Location" : "Location"} value={invoiceData.eventDetails.location} onChange={(e) => setInvoiceData({ ...invoiceData, eventDetails: { ...invoiceData.eventDetails, location: e.target.value }})} className="w-full p-3 border rounded-md text-gray-900 placeholder:text-gray-400" />
           </div>
         </div>
 
@@ -177,8 +222,8 @@ const InvoiceForm = () => {
           <h3 className="font-bold mb-2 text-gray-800">Line Items</h3>
           <div className="grid grid-cols-12 gap-2 mb-2">
             <label className="col-span-5 font-semibold text-sm text-gray-800">Description</label>
-            <label className="col-span-2 font-semibold text-sm text-gray-800 text-center">Quantity</label>
-            <label className="col-span-2 font-semibold text-sm text-gray-800 text-right">Price</label>
+            <label className="col-span-2 font-semibold text-sm text-gray-800 text-center">Qty/Hrs</label>
+            <label className="col-span-2 font-semibold text-sm text-gray-800 text-right">Price/Rate</label>
             <label className="col-span-2 font-semibold text-sm text-gray-800 text-right">Total</label>
           </div>
           {invoiceData.items.map((item, index) => (
@@ -196,10 +241,10 @@ const InvoiceForm = () => {
         {/* Summary */}
         <div className="flex justify-end mb-10">
             <div className="w-full md:w-96 bg-gray-50 rounded-lg p-6 border">
-              <h3 className="font-bold mb-4 text-lg text-gray-800">Invoice Summary</h3>
+              <h3 className="font-bold mb-4 text-lg text-gray-800">Summary</h3>
               <div className="space-y-2">
                 <div className="flex justify-between"><span className="text-gray-600">Subtotal:</span><span className="font-medium text-gray-900">${subtotal.toFixed(2)}</span></div>
-                <div className="flex justify-between items-center"><span className="text-gray-600">Deposit:</span><input type="number" value={invoiceData.deposit} onChange={(e) => setInvoiceData({ ...invoiceData, deposit: Number(e.target.value) || 0 })} className="w-24 p-2 text-right border rounded text-sm text-gray-900 placeholder:text-gray-400" placeholder="0" min="0" step="0.01" /></div>
+                <div className="flex justify-between items-center"><span className="text-gray-600">Deposit / Paid:</span><input type="number" value={invoiceData.deposit} onChange={(e) => setInvoiceData({ ...invoiceData, deposit: Number(e.target.value) || 0 })} className="w-24 p-2 text-right border rounded text-sm text-gray-900 placeholder:text-gray-400" placeholder="0" min="0" step="0.01" /></div>
                 <div className="border-t pt-2 mt-2"><div className="flex justify-between"><span className="font-bold text-lg text-gray-800">Total Due:</span><span className="font-bold text-xl text-green-600">${totalDue.toFixed(2)}</span></div></div>
               </div>
             </div>
@@ -213,7 +258,7 @@ const InvoiceForm = () => {
         
         {/* Signature Upload Section */}
         <div className="mt-10 p-6 border-2 border-dashed rounded-lg bg-gray-50">
-          <h3 className="font-bold mb-4 text-lg text-gray-800">Your Signature</h3>
+          <h3 className="font-bold mb-4 text-lg text-gray-800">Company Signature</h3>
           {invoiceData.signatureBase64 ? (
             <div className="flex items-start gap-4">
               <Image src={invoiceData.signatureBase64} alt="Signature preview" width={120} height={60} className="object-contain border rounded-lg p-2 bg-white" />

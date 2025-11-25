@@ -34,7 +34,9 @@ const styles = StyleSheet.create({
   totalDueRow: { backgroundColor: '#f0f0f0', fontWeight: 'bold' },
   notes: { fontSize: 9, color: '#555', lineHeight: 1.5, marginTop: 20, borderTopColor: '#e0e0e0', borderTopWidth: 1, paddingTop: 10, },
   footer: { position: 'absolute', bottom: 30, left: 40, right: 40, textAlign: 'center', fontSize: 10, color: '#888', },
-  signatureSection: { marginTop: 40, flexDirection: 'row', justifyContent: 'space-between', },
+  
+  // Updated style to align the single signature to the right
+  signatureSection: { marginTop: 40, flexDirection: 'row', justifyContent: 'flex-end' }, 
   signatureBox: { width: '45%', paddingTop: 8 },
   signatureLine: { borderTopColor: '#333', borderTopWidth: 1, marginTop: 40 },
   signatureImage: { width: 120, height: 40, objectFit: 'contain' },
@@ -43,6 +45,10 @@ const styles = StyleSheet.create({
 const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ data }) => {
   const subtotal = data.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
   const totalDue = subtotal - data.deposit;
+
+  // Use dynamic labels if provided, otherwise fallback to defaults
+  const billToLabel = data.labels?.billTo || 'Bill To';
+  const detailsLabel = data.labels?.details || 'Event Details';
 
   return (
     <Document>
@@ -59,12 +65,12 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ data }) => {
         
         <View style={styles.section}>
           <View style={styles.sectionColumn}>
-            <Text style={styles.subHeader}>Bill To</Text>
+            <Text style={styles.subHeader}>{billToLabel}</Text>
             <Text style={styles.text}>{data.billTo.name}</Text>
             <Text style={styles.text}>{data.billTo.phone}</Text>
           </View>
           <View style={styles.sectionColumn}>
-            <Text style={styles.subHeader}>Event Details</Text>
+            <Text style={styles.subHeader}>{detailsLabel}</Text>
             <Text style={styles.text}>Date: {data.eventDetails.date}</Text>
             <Text style={styles.text}>Time: {data.eventDetails.time}</Text>
             <Text style={styles.text}>Location: {data.eventDetails.location}</Text>
@@ -74,8 +80,8 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ data }) => {
         <View style={styles.table}>
           <View style={[styles.tableRow, styles.tableHeader]}>
             <Text style={[styles.tableCol, styles.colDescription, { fontWeight: 'bold' }]}>DETAILS</Text>
-            <Text style={[styles.tableCol, styles.colQty, { fontWeight: 'bold' }]}>QUANTITY</Text>
-            <Text style={[styles.tableCol, styles.colPrice, { fontWeight: 'bold' }]}>PRICE</Text>
+            <Text style={[styles.tableCol, styles.colQty, { fontWeight: 'bold' }]}>QTY/HRS</Text>
+            <Text style={[styles.tableCol, styles.colPrice, { fontWeight: 'bold' }]}>RATE</Text>
             <Text style={[styles.tableCol, styles.colTotal, { fontWeight: 'bold' }]}>TOTAL</Text>
           </View>
           {data.items.map((item, index) => (
@@ -111,13 +117,9 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ data }) => {
         </View>
 
         <View style={styles.signatureSection}>
+         
           <View style={styles.signatureBox}>
-            <Text>Client&apos;s Signature</Text>
-            <View style={styles.signatureLine} />
-            <Text style={{ marginTop: 8 }}>Date: ________________</Text>
-          </View>
-          <View style={styles.signatureBox}>
-            <Text>Royal Turban Tying NY Signature</Text>
+            <Text>{data.companyName} Signature</Text>
             {data.signatureBase64 ? (
               <Image style={styles.signatureImage} src={data.signatureBase64} />
             ) : (
